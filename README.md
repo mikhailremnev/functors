@@ -11,6 +11,6 @@ FUNCTOR(my_func, int x, float y, double z)
 }
 ```
 
-Then, this function can be called in multiple different ways, as demonstrated in example.cc
+Then, this function can be called in multiple different ways, as demonstrated in example.cc.
 The arguments are also correctly converted from string to the correct type.
 
