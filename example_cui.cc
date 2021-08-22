@@ -20,6 +20,12 @@ FUNCTOR(sum, int x, int y)
   return std::string("The result is ") + std::to_string(x+y);
 }
 
+FUNCTOR(prod, double x, double y)
+{
+  printf("%lf * %lf = %lf\n", x, y, x*y);
+  return std::string("The result is ") + std::to_string(x*y);
+}
+
 std::string parse(std::string cmd)
 {
   std::stringstream words_stream(cmd);
