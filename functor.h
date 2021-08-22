@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <stdexcept>
+#include <sstream>
 
 // See README.md for the detailed description.
 // See example.cc for usage example.
@@ -30,6 +31,13 @@ public:
   Typeless() { value = "0"; }
   Typeless(const std::string &val) { value = val; }
   Typeless(const char *val) { value = val; }
+  template <typename T>
+  Typeless(const T &val)
+  {
+    std::stringstream ss;
+    ss << std::showbase << std::hex << val;
+    value = ss.str();
+  }
   Typeless(const int &val)
   {
     char buf[255];
@@ -44,14 +52,19 @@ public:
     return *this;
   }
 
-  operator int() { return atoi(value.c_str()); }
-  operator double() { return atof(value.c_str()); }
-  operator float() { return atof(value.c_str()); }
-  operator const char*() { return value.c_str(); }
+  template <typename T>
+  operator T() {
+    T ret;
+    std::stringstream ss;
+
+    ss << std::showbase << value;
+    ss >> ret;
+
+    return ret;
+  }
   template<typename T>
   operator T*() { return (T*)atol(value.c_str()); }
   operator std::string() { return value; }
-
 private:
   std::string value;
 };
@@ -85,13 +98,21 @@ public:
   std::string getName() { return name; }
   // Returns something like "int x, int y, float z"
   std::string getArgs() { return args; }
+  // Return number of arguments required by this metafunction
+  int getArgCount() { return arg_count; }
   // Call function
   virtual Typeless operator()(vec_str v) {return 0;}
   Typeless call(vec_str v) { return (*this)(v); }
 
-  void checkArgCount(int vec_size)
+  void checkArgs(vec_str& arg_vals)
   {
+    int vec_size = arg_vals.size();
     if (vec_size < arg_count) {
+      if (arg_count == 1 && args.substr(0, 3) == "int") {
+        arg_vals.push_back("0");
+        return;
+      }
+
       char buf[256];
       const int sz = sizeof(buf) / sizeof(char);
       snprintf(buf, sz, "Not enough arguments passed to function %s(%s): "
@@ -155,7 +176,7 @@ std::map<std::string, Functor*> func_map;
     Functor_ ## funcname(const Functor& copy) : Functor(copy) {} \
     virtual Typeless operator()(vec_str v) \
     { \
-      checkArgCount(v.size()); \
+      checkArgs(v); \
       Typeless args[20]; \
       for (unsigned int i = 0; i < 20 && i < v.size(); i++) { \
         args[i] = v[i]; \
