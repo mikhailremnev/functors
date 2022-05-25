@@ -67,6 +67,10 @@ public:
   operator T*() { return (T*)strtol(value.c_str(), NULL, 0); }
   operator std::string() { return value; }
 private:
+  friend std::ostream & operator<<(std::ostream &os, const Typeless& t)
+  {
+    return os << t.value;
+  }
   std::string value;
 };
 
