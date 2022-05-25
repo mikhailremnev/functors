@@ -203,12 +203,12 @@ std::map<std::string, Functor*> func_map;
 //   necessary to use typedefs or `using namespace` declaration.
 //   Otherwise, functor name will not be valid.
 #define FUNCTOR_FROM_CONSTRUCTOR(classname, ...) \
-  FUNCTOR_FROM_CONSTRUCTOR2(classname ## _ ## constructor __FUNCTOR_CREATE_DECL(__VA_ARGS__)) \
+  __FUNCTOR_FROM_CONSTRUCTOR2(classname ## _ ## constructor __FUNCTOR_CREATE_DECL(__VA_ARGS__)) \
   { \
     return new classname(__FUNCTOR_CREATE_CALL(__VA_ARGS__)); \
   }
 // Helper function so that arguments are evaluated before the expansion of FUNCTOR macros
-#define FUNCTOR_FROM_CONSTRUCTOR2(...) \
+#define __FUNCTOR_FROM_CONSTRUCTOR2(...) \
   FUNCTOR(__VA_ARGS__)
 
 //== Create functor from existing method.
