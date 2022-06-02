@@ -26,7 +26,7 @@ int main()
   printf("%s(v) == %d\n", g.getName().c_str(), g_ret);
 
   // 3. By searching for functor in a functor map.
-  Functor* h = func_map["f"];
+  Functor* h = func_map("f");
   int h_ret = h->call(v);
   printf("%s(v) == %d\n", h->getName().c_str(), h_ret);
 

@@ -7,7 +7,7 @@ FUNCTOR(help, int /*ignored*/)
   std::string ret = "";
   ret += "List of supported functions:\n";
   std::map<std::string, Functor*>::iterator it;
-  for (it = func_map.begin(); it != func_map.end(); ++it) {
+  for (it = func_map().begin(); it != func_map().end(); ++it) {
     ret += "  " + it->first + "(" + it->second->getArgs() + ")\n";
   }
 
@@ -46,11 +46,11 @@ std::string parse(std::string cmd)
 
   std::string ret = "";
 
-  if (func_map.find(cmd_name) == func_map.end()) {
+  if (func_map().find(cmd_name) == func_map().end()) {
     ret += "Function '" + cmd_name + "' not found. Type 'help' for the list of supported functions.\n";
   } else {
     try {
-      std::string result = func_map[cmd_name]->call(words);
+      std::string result = func_map(cmd_name)->call(words);
       ret += result;
     } catch (std::invalid_argument &e) {
       ret = e.what();

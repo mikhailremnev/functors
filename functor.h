@@ -23,8 +23,6 @@
 class Typeless
 {
 public:
-  static const Typeless None;
-
   Typeless() { value = "0"; }
   Typeless(const std::string &val) { value = val; }
   Typeless(const char *val) { value = val; }
@@ -66,15 +64,20 @@ public:
   template<typename T>
   operator T*() { return (T*)strtol(value.c_str(), NULL, 0); }
   operator std::string() { return value; }
+
+  static const Typeless& None()
+  {
+    static Typeless static_none = Typeless("");
+    return static_none;
+  }
+
 private:
   friend std::ostream & operator<<(std::ostream &os, const Typeless& t)
   {
-    return os << t.value;
+    return os << "Typeless(" << t.value << ")";
   }
   std::string value;
 };
-
-const Typeless Typeless::None = Typeless();
 
 /**********************************************/
 /*               FUNCTOR CLASS                */
@@ -137,7 +140,16 @@ private:
 };
 
 /** Named map of all functors created with FUNCTOR macro */
-std::map<std::string, Functor*> func_map;
+inline std::map<std::string, Functor*>& func_map()
+{
+  static std::map<std::string, Functor*> static_func_map;
+  return static_func_map;
+}
+/** Get specific functor by name */
+inline Functor* func_map(std::string name)
+{
+  return func_map()[name];
+}
 
 /**********************************************/
 /*        MACRO TO CREATE NEW FUNCTORS        */
@@ -185,12 +197,32 @@ std::map<std::string, Functor*> func_map;
         args[18], args[19]); \
     } \
   }; \
-  Functor_ ## funcname * funcname ## _ptr = (Functor_ ## funcname *)(func_map[#funcname] = new Functor_ ## funcname()); \
+  Functor_ ## funcname * funcname ## _ptr = (Functor_ ## funcname *)(func_map()[#funcname] = new Functor_ ## funcname()); \
   Typeless funcname(__FUNCTOR_DISCARD_FIRST_ARG(, ##__VA_ARGS__, FUNCTOR_ARG_LIST_IMPL))
 
 //------------------------
 // Creating functors for existing functions/constructors/methods
 //------------------------
+
+//== Create functor from existing function.
+//   Example:
+//   FUNCTOR_FROM_FUNC(int, atoi,     const char*);
+//   //                ^^^  ^^^^      ^^^^^^^^^^^
+//   //             return  function  arguments
+//   //               type  name
+//   will make atoi available as
+//   functor_atoi(const char* arg1)
+#define FUNCTOR_FROM_FUNC(ret_type, func, ...) \
+  __FUNCTOR_FROM_FUNC2(functor ##_## func __FUNCTOR_CREATE_DECL(__VA_ARGS__)) \
+  { \
+    __FUNCTOR_RETURN_IF_NOT_VOID(ret_type) func(__FUNCTOR_CREATE_CALL(__VA_ARGS__)); \
+    /* If the return type is void, Typeless::None() will be returned */ \
+    return Typeless::None(); \
+  }
+// Helper function so that arguments are evaluated before the expansion of FUNCTOR macros
+#define __FUNCTOR_FROM_FUNC2(...) \
+  FUNCTOR(__VA_ARGS__)
+
 
 //== Create functor from existing constructor.
 //   Example:
@@ -238,8 +270,8 @@ std::map<std::string, Functor*> func_map;
   { \
     classname* obj = (classname*)ptr; \
     __FUNCTOR_RETURN_IF_NOT_VOID(ret_type) obj->method(__FUNCTOR_CREATE_CALL(__VA_ARGS__)); \
-    /* If the return type is void, Typeless::None will be returned */ \
-    return Typeless::None; \
+    /* If the return type is void, Typeless::None() will be returned */ \
+    return Typeless::None(); \
   }
 
 /**********************************************/
@@ -253,7 +285,7 @@ std::map<std::string, Functor*> func_map;
 //== List of arguments for declaration and definition (implementation).
 //   These macro allow up to 20 input arguments.
 #define FUNCTOR_ARG_LIST_DECL \
-  __FUNCTOR_REPEAT_20(const Typeless& = Typeless::None)
+  __FUNCTOR_REPEAT_20(const Typeless& = Typeless::None())
 #define FUNCTOR_ARG_LIST_IMPL \
   __FUNCTOR_REPEAT_20(const Typeless&)
 
