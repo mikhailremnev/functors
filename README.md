@@ -1,4 +1,4 @@
-Named functor library. (please note that I had to specifically work for C++98, so I was fairly limited in the available features. If I remember correctly, variadic templates might be useful in this library)
+Named functor library. (please note that I had to specifically make it work for C++98, so I was fairly limited in the available features. For C++11 version, might be better to use variadic templates)
 
 The idea is to have an extremely simple, header-only library that can provide a
 minimalistic support for named functions that can be integrated with an interpreter.
