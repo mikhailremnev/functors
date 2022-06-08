@@ -124,9 +124,14 @@ public:
   Functor() : name(""), args("") { arg_count = 0; }
   Functor(const char *_name, const char *_args) : name(_name), args(_args)
   {
-    // Number of arguments ~= number of commas + 1
-    // NOTE: This won't work on cases like std::map<int, int>
-    arg_count = 1 + std::count(args.begin(), args.end(), ',');
+    if (args != "")
+    {
+      // Number of arguments ~= number of commas + 1
+      // NOTE: This won't work on cases like std::map<int, int>
+      arg_count = 1 + std::count(args.begin(), args.end(), ',');
+    } else {
+      arg_count = 0;
+    }
   }
   Functor(const Functor &copy) : name(copy.name), args(copy.args), arg_count(copy.arg_count) {}
 

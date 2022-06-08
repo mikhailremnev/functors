@@ -30,7 +30,7 @@
 #include <sstream>
 #include <iostream>
 
-FUNCTOR(help, int /*ignored*/)
+FUNCTOR(help)
 {
   std::string ret = "";
   ret += "List of supported functions:\n";
