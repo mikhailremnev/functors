@@ -52,16 +52,16 @@ class Typeless
 {
 public:
   Typeless() { value = "0"; }
-  Typeless(const std::string &val) { value = val; }
+  Typeless(const std::string& val) { value = val; }
   Typeless(const char *val) { value = val; }
   template <typename T>
-  Typeless(const T &val)
+  Typeless(const T& val)
   {
     std::stringstream ss;
     ss << std::showbase << std::hex << val;
     value = ss.str();
   }
-  Typeless(const int &val)
+  Typeless(const int& val)
   {
     char buf[255];
     static const int sz = sizeof(buf) / sizeof(char);
@@ -69,7 +69,7 @@ public:
     value = std::string(buf);
   }
 
-  Typeless& operator=(const std::string &s)
+  Typeless& operator=(const std::string& s)
   {
     value = s;
     return *this;
@@ -100,7 +100,7 @@ public:
   }
 
 private:
-  friend std::ostream & operator<<(std::ostream &os, const Typeless& t)
+  friend std::ostream & operator<<(std::ostream& os, const Typeless& t)
   {
     return os << "Typeless(" << t.value << ")";
   }
@@ -122,18 +122,18 @@ class Functor
 {
 public:
   Functor() : name(""), args("") { arg_count = 0; }
-  Functor(const char *_name, const char *_args) : name(_name), args(_args)
+  Functor(const char* _name, const char* _args)
+      : name(_name), args(_args)
   {
-    if (args != "")
-    {
+    if (args == "") {
+      arg_count = 0;
+    } else {
       // Number of arguments ~= number of commas + 1
       // NOTE: This won't work on cases like std::map<int, int>
       arg_count = 1 + std::count(args.begin(), args.end(), ',');
-    } else {
-      arg_count = 0;
     }
   }
-  Functor(const Functor &copy) : name(copy.name), args(copy.args), arg_count(copy.arg_count) {}
+  Functor(const Functor& copy) : name(copy.name), args(copy.args), arg_count(copy.arg_count) {}
 
   // Returns function name
   std::string getName() { return name; }
@@ -142,7 +142,7 @@ public:
   // Return number of arguments required by this metafunction
   int getArgCount() { return arg_count; }
   // Call function
-  virtual Typeless operator()(vec_str v) {return 0;}
+  virtual Typeless operator()(vec_str /*v*/) {return 0;}
   Typeless call(vec_str v) { return (*this)(v); }
 
   void checkArgs(vec_str& arg_vals)
@@ -163,11 +163,16 @@ public:
     }
   }
 
+  std::string getReturnType() { return ret_type; }
+  std::string setReturnType(std::string new_type) { return ret_type = new_type; }
+
 private:
   /** Function name */
   std::string name;
   /** List of function arguments, e.g. "int x, int y, float z" */
   std::string args;
+  /** Return type of the function (or "undefined") */
+  std::string ret_type;
   /** Number of arguments */
   int arg_count;
 };
@@ -208,8 +213,10 @@ inline Functor* func_map(std::string name)
 //   this alternative can be used:
 //   https://stackoverflow.com/questions/5588855/standard-alternative-to-gccs-va-args-trick
 //   (basically, use arg counting, similar to __FUNCTOR_CREATE_DECL)
-#define FUNCTOR(funcname, ...) \
+#define FUNCTOR(...) __FUNCTOR_HELPER(__VA_ARGS__)
+#define __FUNCTOR_HELPER(funcname, ...) \
   Typeless funcname(__FUNCTOR_DISCARD_FIRST_ARG(, ##__VA_ARGS__, FUNCTOR_ARG_LIST_DECL)); \
+  \
   class Functor_ ## funcname : public Functor \
   { \
   public: \
@@ -245,13 +252,15 @@ inline Functor* func_map(std::string name)
 //   //               type  name
 //   will make atoi available as
 //   functor_atoi(const char* arg1)
-#define FUNCTOR_FROM_FUNC(ret_type, func, ...) \
+#define FUNCTOR_FROM_FUNC(_ret_type, func, ...) \
   __FUNCTOR_FROM_FUNC2(functor ##_## func __FUNCTOR_CREATE_DECL(__VA_ARGS__)) \
   { \
-    __FUNCTOR_RETURN_IF_NOT_VOID(ret_type) func(__FUNCTOR_CREATE_CALL(__VA_ARGS__)); \
+    __FUNCTOR_RETURN_IF_NOT_VOID(_ret_type) func(__FUNCTOR_CREATE_CALL(__VA_ARGS__)); \
     /* If the return type is void, Typeless::None() will be returned */ \
     return Typeless::None(); \
-  }
+  } \
+  std::string Functor_ ## _ ## func ## _return_type = \
+    func ## _ptr->setReturnType(#_ret_type);
 // Helper function so that arguments are evaluated before the expansion of FUNCTOR macros
 #define __FUNCTOR_FROM_FUNC2(...) \
   FUNCTOR(__VA_ARGS__)
@@ -298,14 +307,16 @@ inline Functor* func_map(std::string name)
 //   necessary to use typedefs or `using namespace` declaration.
 //   Otherwise, functor name will not be valid.
 //   (TODO: It is very easy to add variation of this macros to explicitly specify functor name)
-#define FUNCTOR_FROM_METHOD(classname, ret_type, method, ...) \
+#define FUNCTOR_FROM_METHOD(classname, _ret_type, method, ...) \
   FUNCTOR(classname ## _ ## method, void* ptr  __FUNCTOR_CREATE_DECL(__VA_ARGS__)) \
   { \
     classname* obj = (classname*)ptr; \
-    __FUNCTOR_RETURN_IF_NOT_VOID(ret_type) obj->method(__FUNCTOR_CREATE_CALL(__VA_ARGS__)); \
+    __FUNCTOR_RETURN_IF_NOT_VOID(_ret_type) obj->method(__FUNCTOR_CREATE_CALL(__VA_ARGS__)); \
     /* If the return type is void, Typeless::None() will be returned */ \
     return Typeless::None(); \
-  }
+  } \
+  std::string Functor_ ## classname ## _ ## method ## _return_type = \
+    classname ## _ ## method ## _ptr->setReturnType(#_ret_type);
 
 /**********************************************/
 /*             AUXILLARY MACRO                */
