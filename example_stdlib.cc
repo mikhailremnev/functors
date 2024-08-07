@@ -35,6 +35,7 @@ namespace functor
   using namespace std;
   FUNCTOR_FROM_CONSTRUCTOR(string, const char*);
   FUNCTOR_FROM_METHOD(string, string, substr, int, int);
+  FUNCTOR_FROM_FUNC(string, to_string, int);
 }
 
 int main()
