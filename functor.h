@@ -260,7 +260,7 @@ inline Functor* func_map(std::string name)
     return Typeless::None(); \
   } \
   std::string Functor_ ## _ ## func ## _return_type = \
-    func ## _ptr->setReturnType(#_ret_type);
+    functor_ ## func ## _ptr->setReturnType(#_ret_type);
 // Helper function so that arguments are evaluated before the expansion of FUNCTOR macros
 #define __FUNCTOR_FROM_FUNC2(...) \
   FUNCTOR(__VA_ARGS__)
